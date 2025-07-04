@@ -1,0 +1,70 @@
+{% extends 'apps/base/base-page.html' %}
+{% load humanize %}
+{% block body %}
+    <div class="card mb-3 mt-2">
+        <div class="card-body">
+            <div class="col-lg-8 swiper-container">
+                {% if messages %}
+                    {% for message in messages %}
+                        <p style="color: red">{{ message }}</p>
+                    {% endfor %}
+
+                {% endif %}
+                <form action="{% url  'order-form' product.slug %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <label class="form-label" for="formGroupNameInput">Ism:</label>
+                        <input class="form-control" name="fullname" id="formGroupNameInput" type="text">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="formGroupEmailInput">Telefon nomer:</label>
+                        <input class="form-control" id="phone-mask" required="" name="phone_number" type="text">
+                    </div>
+                    {% if product %}
+                        <input class="hidden" hidden="hidden" id="phone-mask" required="" name="product"
+                               value="{{ product.pk }}" type="text">
+                    {% endif %}
+                    {% if thread %}
+                        <input class="hidden" hidden="hidden" id="phone-mask" required="" name="thread"
+                               value="{{ thread.pk }}">
+                    {% endif %}
+
+                    <span style="padding-bottom: 100px;">
+
+                </span>
+                    <div class="d-grid gap-2 col-6 mx-auto" style="margin-top: 20px;">
+                        <button class="btn btn-primary" type="submit">Buyurtma berish</button>
+                    </div>
+                </form>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 swiper-container" style="margin-top: 20px;">
+
+                    <img src="{{ product.image.url }}" alt="" class="img-main mb-3 img-fluid">
+
+                    <div class="row mb-5 thumbs">
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8 swiper-container">
+                <h5>
+                    {{ product.title }}
+                </h5>
+                <p class="fs--1">
+                    {{ product.description | safe }}
+                </p>
+                <h4 class="d-flex align-items-center">
+                <span class="text-warning me-2">
+                    {% if thread %}
+                        {{ thread.discount_price | intcomma }} so'm
+                    {% else %}
+                        {{ product.price | intcomma }} so'm
+                    {% endif %} 
+
+                </span>
+                </h4>
+            </div>
+        </div>
+    </div>
+{% endblock %}
