@@ -243,8 +243,8 @@
                                 type="radio"
                                 name="status"
                                 id="delivered_order"
-                                value="{{ order.StatusType.COMPLETED.value }}"
-                                {% if order.status == order.StatusType.COMPLETED %} checked {% endif %}
+                                value="{{ order.StatusType.DELIVERED.value }}"
+                                {% if order.status == order.StatusType.DELIVERED %} checked {% endif %}
                                 required
                         >
                         <label class="form-check-label" for="delivered_order">

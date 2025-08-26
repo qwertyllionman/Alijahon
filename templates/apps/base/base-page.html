@@ -678,7 +678,7 @@
                                         </a>
                                     </li>
                                     <li class="nav-item">
-                                        <a class="nav-link active" href="/admin_page/diagrams" aria-expanded="false">
+                                        <a class="nav-link active" href="{% url 'diagram' %}" aria-expanded="false">
                                             <div class="d-flex align-items-center"><span class="nav-link-text ps-1">Diagrammalar</span>
                                             </div>
                                         </a>
@@ -784,6 +784,12 @@
                                             </a>
                                         {% endif %}
 
+                                        {% if request.user.role == "deliver" %}
+                                            <a class="dropdown-item header_navbar_lang_menu_dropdown_item"
+                                               href="{% url 'operator-orders' %}">
+                                                Deliver Panel
+                                            </a>
+                                        {% endif %}
 
                                         <a class="dropdown-item header_navbar_lang_menu_dropdown_item"
                                            href="{% url 'logout' %}">

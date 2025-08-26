@@ -359,6 +359,7 @@ class CompetitionListView(ListView):
         data['site'] = SiteSettings.objects.first()
         return data
 
+
 class PaymentCreateView(LoginRequiredMixin, CreateView):
     template_name = 'apps/payment/pay-form.html'
     form_class = PaymentModelForm
@@ -392,10 +393,14 @@ class OperatorOrderListView(ListView):
     context_object_name = 'orders'
 
     def get_context_data(self, *args, **kwargs):
-        data =  super().get_context_data(*args, **kwargs)
+        data = super().get_context_data(*args, **kwargs)
         data['status'] = Order.StatusType.values
         data['categories'] = Category.objects.all()
         data['regions'] = Region.objects.all()
+        data['operator_status'] = [Order.StatusType.NEW, Order.StatusType.CANCELED, Order.StatusType.ARCHIVED,
+                                   Order.StatusType.NOT_CALL]
+        data['deliver_status'] = [Order.StatusType.DELIVERING, Order.StatusType.READY_TO_DELIVERY,
+                                  Order.StatusType.CANCELED]
         category_id = self.request.GET.get('category_id')
         district_id = self.request.GET.get('district_id')
         if category_id:
@@ -414,11 +419,12 @@ class OperatorOrderListView(ListView):
             query = Order.objects.filter(product__category_id=category_id)
         if district_id:
             query = Order.objects.filter(district_id=district_id)
-        if status != 'new':
+        if status != 'new' and self.request.user.role != User.RoleType.DELIVER:
             query = query.filter(operator=self.request.user, status=status)
         else:
             query = query.filter(status=status)
         return query
+
 
 class OrderUpdateView(UpdateView):
     queryset = Order.objects.all()
@@ -428,8 +434,14 @@ class OrderUpdateView(UpdateView):
     form_class = OrderUpdateModelForm
     success_url = reverse_lazy('operator-orders')
 
-
-
+    def form_valid(self, form):
+        status = form.cleaned_data.get('status')
+        obj = self.get_object(self.queryset)
+        if obj.thread and status == Order.StatusType.DELIVERED:
+            seller = obj.thread.owner
+            seller.balance += (obj.thread.product.seller_price - obj.thread.discount) * obj.quantity
+            seller.save()
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
@@ -446,4 +458,31 @@ class OrderUpdateView(UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['order'] = self.object
+        kwargs['employee'] = self.request.user
+        kwargs['operator'] = self.request.user
         return kwargs
+
+    def form_invalid(self, form):
+        for error in form.errors.values():
+            messages.error(self.request, error)
+        return super().form_invalid(form)
+
+class DiagramView(TemplateView):
+    template_name = 'apps/order/diagram.html'  # to‘g‘ri joyini yozing
+
+
+# API JSON response
+def region_orders_data(request):
+    orders = Order.objects.values('district__region__name').annotate(count=Count('id')).order_by('-count')
+
+    response = {
+        'regions': [],
+        'numbers': []
+    }
+
+    for item in orders:
+        region_name = item['district__region__name'] or "Nomaʼlum"
+        response['regions'].append(region_name)
+        response['numbers'].append(item['count'])
+
+    return JsonResponse(response)

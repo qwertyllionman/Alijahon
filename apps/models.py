@@ -1,12 +1,11 @@
-from xmlrpc.client import Boolean
-
 from ckeditor_uploader.fields import RichTextUploadingField
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db.models import Model, CharField, ForeignKey, CASCADE, DecimalField, TextField, DateTimeField, \
     IntegerField, ImageField, URLField, SlugField, SET_NULL, SmallIntegerField, TextChoices, DateField
-from django.db.models.fields import BooleanField
+from django.db.models import BooleanField
 from django.utils.text import slugify
+from django.db import models
 
 class BaseSlug(Model):
     slug = SlugField(null=True)
@@ -89,8 +88,8 @@ class CustomUserManager(UserManager):
 
 class User(AbstractUser):
     phone_number = CharField(max_length=20, unique=True)
-    username = None
-    email = None
+    username = CharField(max_length=255, null=True, blank=True)
+    email = models.CharField(max_length=255 , unique=True, null=True, blank=True)
     class RoleType(TextChoices):
         ADMIN = 'admin', 'Admin'
         OPERATOR = 'operator', 'Operator'
@@ -158,6 +157,7 @@ class Order(Model):
     total = DecimalField(max_digits=9, decimal_places=2)
     created_at = DateTimeField(auto_now_add=True)
     operator = ForeignKey('apps.User', SET_NULL, null=True, blank=True, related_name='operator_orders')
+    deliver = ForeignKey('apps.User', SET_NULL, null=True, blank=True, related_name='deliver_orders')
     updated_at = DateTimeField(auto_now=True)
     thread = ForeignKey('apps.Thread', SET_NULL, null=True, blank=True, related_name='orders')
     status = CharField(choices=StatusType, default=StatusType.NEW)

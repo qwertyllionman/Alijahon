@@ -21,6 +21,11 @@
                     <div class="col-sm-6 p-4">
                         <div class="card">
                             <div class="card-header">
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        <p style="color: red">{{ message }}</p>
+                                    {% endfor %}
+                                {% endif %}
                                 <h5>To'lovga sorov berish formasi</h5>
                             </div>
                             <nav>
@@ -111,14 +116,15 @@
                         {% if payments %}
                             {% for payment in payments %}
                                 <tr class="text-center">
-                                    <td>{{ payment.pay_at|date:"d-m-Y"}}</td>
+                                    <td>{{ payment.pay_at|date:"d-m-Y" }}</td>
                                     <td>{{ payment.card_number }}</td>
                                     <td>{{ payment.amount }}</td>
                                     <td>{{ payment.status }}</td>
                                     <td>{{ payment.comment }}</td>
                                     <td>
                                         {% if payment.receipt %}
-                                            <a href="{{ payment.receipt.url }}"> <img src="{{ payment.receipt.url }}" alt="Check" width="30" ></a>
+                                            <a href="{{ payment.receipt.url }}"> <img src="{{ payment.receipt.url }}"
+                                                                                      alt="Check" width="30"></a>
                                         {% else %}
                                             -
                                         {% endif %}

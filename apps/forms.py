@@ -1,13 +1,12 @@
 import datetime
 import re
 
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
 from django.forms import Form, ModelForm
 from django.forms.fields import CharField
-from django.views.generic import FormView
 
-from apps.models import User, Order, Product, Thread, SiteSettings, Payment
+from apps.models import User, Order, Thread, SiteSettings, Payment
 
 
 class AuthForm(Form):
@@ -17,7 +16,6 @@ class AuthForm(Form):
     def clean_phone_number(self):
         phone_number = self.cleaned_data.get("phone_number")
         return re.sub("/D", "", phone_number)
-
 
     def clean(self):
         data = self.cleaned_data
@@ -42,29 +40,31 @@ class AuthForm(Form):
         user.save()
         return user
 
+
 class ProfileModelForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(ProfileModelForm, self).__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = False
+
     class Meta:
         model = User
         fields = 'first_name', 'last_name', 'district', 'address', 'telegram_id', 'about'
 
 
 class ChangePasswordForm(Form):
-    old_password=CharField(max_length=255)
-    new_password=CharField(max_length=255)
-    confirm_password=CharField(max_length=255)
+    old_password = CharField(max_length=255)
+    new_password = CharField(max_length=255)
+    confirm_password = CharField(max_length=255)
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
 
     def clean_confirm_password(self):
-        new_password=self.cleaned_data.get("new_password")
-        confirm_password=self.cleaned_data.get("confirm_password")
-        if  new_password != confirm_password:
+        new_password = self.cleaned_data.get("new_password")
+        confirm_password = self.cleaned_data.get("confirm_password")
+        if new_password != confirm_password:
             raise ValidationError("Password is not matching with new password!")
         return confirm_password
 
@@ -73,13 +73,13 @@ class ChangePasswordForm(Form):
         user.set_password(new_password)
         user.save()
 
+
 class OrderModelForm(ModelForm):
-    
+
     def __init__(self, *args, **kwargs):
-        super().__init__( *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['total'].required = False
         self.fields['thread'].required = False
-
 
     class Meta:
         model = Order
@@ -112,10 +112,11 @@ class ThreadModelForm(ModelForm):
             raise ValidationError("Exceed discount limit!")
         return discount
 
+
 class PaymentModelForm(ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
-        super().__init__( *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['user'].required = False
 
     class Meta:
@@ -125,34 +126,55 @@ class PaymentModelForm(ModelForm):
     def clean_user(self):
         return self.user
 
+    def clean_card_number(self):
+        card_number = str(self.cleaned_data.get("card_number")).replace(" ", "")
+        if not card_number.isdigit() or len(card_number) != 16:
+            raise ValidationError("Invalid card number")
+        return card_number
+
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
         user = self.user
-        if amount > user.balance:
+        if float(amount) < 1000:
+            raise ValidationError("Minimum 1000 sum kirita olasiz!")
+        if amount > float(user.balance):
             raise ValidationError("Mablag' yetarli emas !")
         return amount
 
 
 class OrderUpdateModelForm(ModelForm):
-    class Meta:
-        model = Order
-        fields = 'quantity', 'district', 'status', 'comment', 'delivery_date', 'operator'
-
     def __init__(self, *args, **kwargs):
         self.order = kwargs.pop('order', None)
+        self.employee = kwargs.pop('employee', None)
         self.operator = kwargs.pop('operator', None)
-        super().__init__( *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.fields['quantity'].required = False
+        self.fields['district'].required = False
+        self.fields['status'].required = False
+        self.fields['comment'].required = False
+        self.fields['operator'].required = False
+
+    class Meta:
+        model = Order
+        fields = 'quantity', 'district', 'status', 'comment', 'delivery_date', 'operator', 'deliver'
 
     def clean_operator(self):
-        return self.operator
+        if self.employee.role == User.RoleType.OPERATOR:
+            return self.employee
+        return self.cleaned_data.get('operator')
 
+    def clean_deliver(self):
+        if self.employee.role == User.RoleType.DELIVER:
+            return self.operator
 
     def clean_quantity(self):
-        quantity = self.cleaned_data.get('quantity')
         order = self.order
+        quantity = self.cleaned_data.get('quantity')
+        if not quantity:
+            quantity = order.quantity
         site = SiteSettings.objects.first()
         if order.product.quantity < quantity:
-                raise ValidationError("Product soni yetarli emas!")
+            raise ValidationError("Product soni yetarli emas!")
 
         if order.thread:
             order.total = order.thread.discount_price * quantity + site.delivery_price
@@ -164,7 +186,6 @@ class OrderUpdateModelForm(ModelForm):
     def clean_delivery_date(self):
         delivery_date = self.cleaned_data.get('delivery_date')
 
-        if  delivery_date and datetime.date.today() > delivery_date:
+        if delivery_date and datetime.date.today() > delivery_date:
             raise ValidationError("Yetqazish vaqti noto'g'ri!")
         return delivery_date
-

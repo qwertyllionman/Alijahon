@@ -3,8 +3,9 @@ from django.urls import path, include
 
 from apps.views import HomeListView, AuthFormView, LogoutView, OrderFormView, wishlist_view, ProductListView, \
     ProfileUpdateView, OrderListView, district_view, UserChangePasswordView, SearchProductListView, WishListView, \
-    MarketListView, ThreadCreateView, ThreadListView, ThreadDetailView, StatisticListView, CompetitionListView, PaymentCreateView, \
-    OperatorOrderListView, OrderUpdateView
+    MarketListView, ThreadCreateView, ThreadListView, ThreadDetailView, StatisticListView, CompetitionListView, \
+    PaymentCreateView, \
+    OperatorOrderListView, OrderUpdateView, DiagramView, region_orders_data
 
 urlpatterns = [
     path('', HomeListView.as_view(), name="home"),
@@ -50,5 +51,10 @@ urlpatterns += [
 urlpatterns += [
     path('operator/order/list',  OperatorOrderListView.as_view(), name='operator-orders'),
     path('operator/order/update/<int:pk>',  OrderUpdateView.as_view(), name='order-detail')
+]
 
+# ---------------------------------- Diagram ------------------------------------------------
+urlpatterns += [
+    path('diagram', DiagramView.as_view(), name='diagram'),
+    path('api/region-orders/', region_orders_data, name='region-orders-data'),
 ]

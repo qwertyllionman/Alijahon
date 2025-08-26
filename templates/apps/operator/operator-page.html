@@ -52,11 +52,12 @@
                     <p>
                         <label for="id_category">Category:</label>
                         <select name="category_id" class="form-control">
-                            <option value=""{% if not category_id %}selected{% endif %}>All category</option>
+                            <option value="" {% if not category_id %}selected{% endif %}>All category</option>
 
                             {% for category in categories %}
                                 {% if category_id %}{% endif %}
-                                <option value="{{ category.pk }}"{% if category_id == category.pk%}selected{% endif %}>{{ category.name }}</option>
+                                <option value="{{ category.pk }}"
+                                        {% if category_id == category.pk %}selected{% endif %}>{{ category.name }}</option>
                             {% endfor %}
                         </select>
                     </p>
@@ -109,19 +110,36 @@
                                 <li class="">Yangilangan vaqti: {{ order.updated_at|date:'Y-m-d H:i:s' }}</li>
                                 <li class="">Holati: {{ order.status }}</li>
                             </ul>
-                            {% if order.status != 'completed' %}
-                                {% if  order.hold %}
-                                    <button class="btn btn-light" disabled=""
-                                            style="float: left; margin-right: 10px;">
-                                        Hold
-                                    </button>
-                                {% else %}
-                                    <a  href="{% url 'order-detail' order.pk%}" class="btn btn-primary"
-                                            style="float: left; margin-right: 10px;">
-                                        Qabul qilish
-                                    </a>
+                            {% if request.user.role == 'deliver' %}
+                                {% if order.status in deliver_status %}
+                                    {% if  order.hold %}
+                                        <button class="btn btn-light" disabled=""
+                                                style="float: left; margin-right: 10px;">
+                                            Hold
+                                        </button>
+                                    {% else %}
+                                        <a href="{% url 'order-detail' order.pk %}" class="btn btn-primary"
+                                           style="float: left; margin-right: 10px;">
+                                            Qabul qilish
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            {% elif request.user.role == 'operator' %}
+                                {% if order.status in operator_status %}
+                                    {% if  order.hold %}
+                                        <button class="btn btn-light" disabled=""
+                                                style="float: left; margin-right: 10px;">
+                                            Hold
+                                        </button>
+                                    {% else %}
+                                        <a href="{% url 'order-detail' order.pk %}" class="btn btn-primary"
+                                           style="float: left; margin-right: 10px;">
+                                            Qabul qilish
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
                             {% endif %}
+
                         </div>
                     </div>
                 {% endfor %}
